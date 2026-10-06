@@ -11,9 +11,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - board: nice_nano_v2
+          - board: nice_nano//zmk
             shield: corne_left
-          - board: nice_nano_v2
+          - board: nice_nano//zmk
             shield: corne_right
     steps:
       - name: Checkout
@@ -44,13 +44,20 @@ jobs:
         run: west build -s zmk/app -b ${{ matrix.board }} -- -DSHIELD=${{ matrix.shield }} -DZMK_CONFIG="${GITHUB_WORKSPACE}/config"
       - name: ${{ matrix.shield }} DTS File
         if: ${{ always() }}
-        run: cat -n build/zephyr/${{ matrix.board }}.dts.pre.tmp
+        run: |
+          if [ -f build/zephyr/zephyr.dts ]; then
+            cat -n build/zephyr/zephyr.dts
+          elif [ -f build/zephyr/zephyr.dts.pre ]; then
+            cat -n build/zephyr/zephyr.dts.pre
+          else
+            echo "No devicetree output was generated."
+          fi
       - name: ${{ matrix.shield }} Kconfig file
         run: cat build/zephyr/.config | grep -v "^#" | grep -v "^$"
       - name: Rename zmk.uf2
-        run: cp build/zephyr/zmk.uf2 ${{ matrix.shield }}_${{ matrix.board }}.uf2
+        run: cp build/zephyr/zmk.uf2 ${{ matrix.shield }}.uf2
       - name: Archive (${{ matrix.shield }})
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.shield }}-${{ matrix.board }}
-          path: ${{ matrix.shield }}_${{ matrix.board }}.uf2
+          name: ${{ matrix.shield }}
+          path: ${{ matrix.shield }}.uf2
